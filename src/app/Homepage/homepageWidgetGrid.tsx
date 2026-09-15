@@ -821,6 +821,7 @@ export const SortableWidgetCard: React.FC<SortableWidgetCardProps> = ({
     <div
       ref={setWrapperRef}
       style={style}
+      data-widget-id={widget.id}
       className={`widget-wrapper${isDragging ? ' is-dragging' : ''}${isResizing ? ' is-resizing' : ''}${needsAutoSize ? ' is-auto-sizing' : ''}`}
     >
       <WidgetColSpanContext.Provider value={displayColSpan}>

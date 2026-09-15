@@ -95,6 +95,272 @@ body,
   box-shadow: var(--pf-v6-global--BoxShadow--sm);
 }
 
+/*
+ * Help panel — Widget builder section: vertical stack layout for the narrow panel width.
+ */
+.dashboard-widgets-help-panel .pf-v6-c-tabs {
+  --pf-v6-c-tabs__item--m-current__link--after--BorderColor: var(--pf-t--global--border--color--brand--default);
+}
+
+.dashboard-widgets-help-panel .widget-drawer-section-card {
+  --pf-v6-c-card--BorderColor: transparent !important;
+  --pf-v6-c-card--BorderWidth: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.dashboard-widgets-help-panel .widget-drawer-subsection-card {
+  --pf-v6-c-card--BackgroundColor: var(--pf-t--global--background--color--100);
+  border: none !important;
+  --pf-v6-c-card--BorderColor: transparent !important;
+  --pf-v6-c-card--BorderWidth: 0 !important;
+  box-shadow: none !important;
+}
+
+.dashboard-widgets-help-panel .widget-drawer-subsection-card-title.pf-v6-c-card__title {
+  --pf-v6-c-card__title--FontSize: inherit;
+  --pf-v6-c-card__title--LineHeight: inherit;
+  padding-block: var(--pf-t--global--spacer--md);
+  padding-inline: var(--pf-t--global--spacer--lg);
+  background: var(--pf-t--global--background--color--100);
+}
+
+.dashboard-widgets-help-panel .widget-drawer-subsection-card-title__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  line-height: 0;
+  color: var(--pf-t--global--icon--color--default);
+}
+
+.dashboard-widgets-help-panel .widget-drawer-subsection-card-title__icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.dashboard-widgets-help-panel .widget-drawer-subsection-card > .pf-v6-c-divider {
+  margin: 0;
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-card.pf-v6-c-card {
+  min-height: 0;
+  margin-top: var(--pf-t--global--spacer--lg);
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-section-body.pf-v6-c-card__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-intro {
+  flex-shrink: 0;
+  margin: 0 0 var(--pf-t--global--spacer--md) 0;
+  color: var(--pf-t--global--text--color--subtle, var(--pf-v6-global--Color--200));
+  font-size: var(--pf-t--global--font--size--body--default);
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pf-t--global--spacer--md);
+  width: 100%;
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-row__editor {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-editor-stack {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--pf-t--global--spacer--md);
+  width: 100%;
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-title-icon-row {
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-title-form-group.pf-v6-c-form__group,
+.dashboard-widgets-help-panel .add-widgets-builder-icon-form-group.pf-v6-c-form__group {
+  margin: 0;
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-title-form-group .pf-v6-c-form-control {
+  width: 100%;
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-header-icon-toggle.pf-v6-c-menu-toggle {
+  min-width: auto;
+  width: fit-content;
+  justify-content: center;
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-header-icon-toggle__icon {
+  display: block;
+  width: 1.125rem;
+  height: 1.125rem;
+  color: var(--pf-t--global--icon--color--brand--default);
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-form-group.pf-v6-c-form__group {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-form-group.pf-v6-c-form__group .pf-v6-c-form__group-control {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  align-self: stretch;
+}
+
+.dashboard-widgets-help-panel #widget-builder-code-editor {
+  display: flex;
+  flex-direction: column;
+  height: 280px;
+  min-height: 200px;
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-code-editor.pf-v6-c-code-editor {
+  width: 100%;
+  height: 100%;
+  flex: 1 1 auto;
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-code-editor .pf-v6-c-code-editor__main {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-code-editor .pf-v6-c-code-editor__code {
+  height: 100%;
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-code-editor .pf-v6-c-code-editor__code > section {
+  height: 100% !important;
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-code-editor.pf-v6-c-code-editor .pf-v6-c-code-editor__controls {
+  flex: 1 1 auto;
+  min-width: 0;
+  align-items: stretch;
+  flex-wrap: nowrap;
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-code-editor .pf-v6-c-code-editor__header-content {
+  align-items: stretch;
+  background-color: var(--pf-t--global--background--color--primary--default);
+  padding-block: 0;
+  padding-inline: 0;
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-code-editor-header-toolbar {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-items: stretch;
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-code-editor-toolbar-gray {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--pf-v6-c-code-editor__controls--Gap, var(--pf-t--global--spacer--sm));
+  padding-inline: var(--pf-t--global--spacer--sm);
+  padding-block: var(--pf-t--global--spacer--xs);
+  background-color: var(--pf-t--global--background--color--secondary--default);
+  border-inline-end: var(--pf-t--global--border--width--box--default) solid var(--pf-t--global--border--color--default);
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-code-editor-toolbar-gray-spacer {
+  flex: 1 1 auto;
+  min-width: var(--pf-t--global--spacer--sm);
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-code-editor-toolbar-white {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  align-self: stretch;
+  width: fit-content;
+  max-width: 100%;
+  padding-inline: var(--pf-t--global--spacer--sm);
+  padding-block: var(--pf-t--global--spacer--xs);
+  background-color: var(--pf-t--global--background--color--primary--default);
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-language-toggle-content {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pf-t--global--spacer--xs);
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-language-toggle-icon {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  color: var(--pf-t--global--icon--color--default);
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-row__preview {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-preview-panel.pf-v6-c-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  overflow: visible;
+  border: none;
+  box-shadow: none;
+  --pf-v6-c-card--first-child--PaddingBlockStart: var(--pf-t--global--spacer--sm);
+  --pf-v6-c-card--child--PaddingInlineEnd: var(--pf-t--global--spacer--md);
+  --pf-v6-c-card--child--PaddingBlockEnd: var(--pf-t--global--spacer--md);
+  --pf-v6-c-card--child--PaddingInlineStart: var(--pf-t--global--spacer--md);
+  --pf-v6-c-card--c-divider--child--PaddingBlockStart: var(--pf-t--global--spacer--sm);
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-preview-panel-header.pf-v6-c-card__header {
+  padding-block: var(--pf-t--global--spacer--sm);
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-preview-panel-body.pf-v6-c-card__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: var(--pf-t--global--spacer--md);
+}
+
+.dashboard-widgets-help-panel .add-widgets-builder-preview-panel-actions.pf-v6-l-flex {
+  margin-top: auto;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.dashboard-widgets-help-panel .widget-builder-sample-preview-card.pf-v6-c-card {
+  height: fit-content;
+  overflow: visible;
+  width: 100%;
+  max-width: 100%;
+}
+
 /* Fixed slot for + vs check so compact bank cards don’t change size */
 .bank-widget-card__action-slot.pf-v6-l-flex__item,
 .bank-widget-card__action-slot {
@@ -431,40 +697,6 @@ form.editable-dashboard-name-group.pf-v6-c-form.editable-dashboard-toolbar-meta-
   margin-inline-start: auto;
 }
 
-/* Boxed secondary Tabs — Close state only; hug contents in toolbar row */
-.editable-dashboard-widget-panel-tabs.pf-v6-c-tabs {
-  width: auto;
-  /* Drawer seam tweaks zero bottom padding elsewhere — keep item/link vertically symmetric so Close aligns with Share / plain actions */
-  --pf-v6-c-tabs__item--PaddingBlockStart: 0;
-  --pf-v6-c-tabs__item--PaddingBlockEnd: 0;
-  /* Extra air below the top accent line, above the icon + “Close” label */
-  --pf-v6-c-tabs__link--PaddingBlockStart: var(--pf-t--global--spacer--md);
-  --pf-v6-c-tabs__link--PaddingBlockEnd: var(--pf-t--global--spacer--sm);
-}
-
-/*
- * Close tab + Add widgets drawer: pull strip and drawer together (no white seam / rounded gap).
- * Uses .editable-dashboard-page[data-widget-drawer-open] from EditableDashboard.
- */
-.editable-dashboard-page[data-widget-drawer-open] .editable-dashboard-widget-panel-tabs.pf-v6-c-tabs {
-  margin-block-end: -4px;
-}
-
-.editable-dashboard-page[data-widget-drawer-open]
-  .editable-dashboard-widget-panel-tabs.pf-v6-c-tabs.pf-m-box {
-  --pf-v6-c-tabs__link--before--BorderBlockEndWidth: 0;
-}
-
-.editable-dashboard-page[data-widget-drawer-open] .widget-drawer.open .widget-drawer-panel.pf-v6-c-panel {
-  border-start-start-radius: 0;
-  border-start-end-radius: 0;
-}
-
-.editable-dashboard-page[data-widget-drawer-open] .widget-drawer.open .widget-drawer-panel.pf-v6-c-panel::before {
-  border-start-start-radius: 0;
-  border-start-end-radius: 0;
-}
-
 /*
  * Toolbar icon + label — plain actions (Share, Add widgets) and Close (boxed tab).
  */
@@ -474,6 +706,11 @@ form.editable-dashboard-name-group.pf-v6-c-form.editable-dashboard-toolbar-meta-
 
 .editable-dashboard-toolbar-plain-icon-action.pf-v6-c-button.pf-m-plain:hover {
   --pf-v6-c-button--m-plain--Color: var(--pf-t--global--text--color--regular);
+}
+
+.editable-dashboard-toolbar-plain-icon-action--active.pf-v6-c-button.pf-m-plain {
+  background-color: var(--pf-t--global--background--color--action--plain--clicked);
+  --pf-v6-c-button--m-plain--Color: var(--pf-t--global--text--color--brand--default);
 }
 
 .editable-dashboard-toolbar-icon-label__inner {
@@ -496,19 +733,7 @@ form.editable-dashboard-name-group.pf-v6-c-form.editable-dashboard-toolbar-meta-
   color: var(--pf-t--global--icon--color--brand--hover);
 }
 
-.editable-dashboard-widget-panel-tabs.pf-v6-c-tabs
-  .pf-v6-c-tabs__link:not(:disabled):not([aria-disabled='true']):hover
-  .editable-dashboard-toolbar-icon-label__icon {
-  color: var(--pf-t--global--icon--color--brand--hover);
-}
-
 .editable-dashboard-toolbar-plain-icon-action:is(:disabled, .pf-m-disabled, .pf-m-aria-disabled)
-  .editable-dashboard-toolbar-icon-label__icon {
-  color: var(--pf-t--global--icon--color--disabled);
-}
-
-.editable-dashboard-widget-panel-tabs.pf-v6-c-tabs
-  .pf-v6-c-tabs__link:is(:disabled, [aria-disabled='true'])
   .editable-dashboard-toolbar-icon-label__icon {
   color: var(--pf-t--global--icon--color--disabled);
 }

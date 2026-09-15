@@ -28,9 +28,6 @@ import {
   FormGroup,
   HelperText,
   HelperTextItem,
-  Tab,
-  Tabs,
-  TabTitleText,
   TextInput,
   Title,
   Tooltip
@@ -38,18 +35,17 @@ import {
 import {
   CheckIcon,
   CheckCircleIcon,
-  CodeIcon,
   EllipsisVIcon,
   HomeIcon,
   OutlinedCloneIcon,
   OutlinedTrashAltIcon,
   PencilAltIcon,
   PlusCircleIcon,
+  ShareAltIcon,
   ThumbtackIcon,
-  TimesCircleIcon,
   TimesIcon
 } from '@app/icons/rhUiIcons';
-import { AddWidgetsDrawer } from '@app/Homepage/AddWidgetsDrawer';
+import { HelpPanelContext } from '@app/AppLayout/AppLayout';
 import { setDashboardBankBridgeState } from '@app/Homepage/dashboardBankBridge';
 import { createHomepageWidgetClones } from '@app/Homepage/homepageWidgetCatalog';
 import {
@@ -99,14 +95,13 @@ import {
   writeDashboardCanvasWidgets
 } from '@app/DashboardHub/dashboardCanvasStorage';
 import { DASHBOARD_CANVAS_LAYOUT_CLASS } from '@app/DashboardHub/dashboardCanvasLayout';
+import { CopyConfigStringModal } from '@app/DashboardHub/CopyConfigStringModal';
 import { DeleteDashboardModal } from '@app/DashboardHub/DeleteDashboardModal';
 import { DuplicateDashboardModal } from '@app/DashboardHub/DuplicateDashboardModal';
 import { PinDashboardModal } from '@app/DashboardHub/PinDashboardModal';
 import {
-  COPY_CONFIG_STRING_TOOLTIP_CONTENT,
-  COPY_JSON_CONFIG_MENU_LABEL,
   PIN_DASHBOARD_TO_SERVICES_MENU_LABEL,
-  useCopyConfigFeedback
+  SHARE_DASHBOARD_MENU_LABEL
 } from '@app/useCopyConfigFeedback';
 import { scheduleDeferredResizeObserverWork, useDeferredResizeObserverOffsetWidth } from '@app/useDeferredResizeObserver';
 
@@ -521,7 +516,7 @@ const EditableDashboard: React.FunctionComponent = () => {
 
   const [autosaveEnabled, setAutosaveEnabled] = React.useState(true);
   const [isKebabOpen, setIsKebabOpen] = React.useState(false);
-  const { copiedTooltipVisible, triggerCopiedFeedback } = useCopyConfigFeedback();
+  const [isCopyConfigModalOpen, setIsCopyConfigModalOpen] = React.useState(false);
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = React.useState(false);
   const [isPinDashboardModalOpen, setIsPinDashboardModalOpen] = React.useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
@@ -538,9 +533,7 @@ const EditableDashboard: React.FunctionComponent = () => {
   const descriptionFieldWrapRef = React.useRef<HTMLDivElement>(null);
   const [isDescriptionTruncated, setIsDescriptionTruncated] = React.useState(false);
 
-  const [isWidgetDrawerOpen, setIsWidgetDrawerOpen] = React.useState(false);
-  /** Unified grey behind toolbar + widget bank (inline styles avoid PF cascade hiding app.css). */
-  const isAddWidgetsDrawerChromeOpen = !isPrebuilt && isWidgetDrawerOpen;
+  const helpPanelContext = React.useContext(HelpPanelContext);
   const [removedWidgets, setRemovedWidgets] = React.useState<Widget[]>(() => createHomepageWidgetClones());
   const [canvasWidgets, setCanvasWidgets] = React.useState<Widget[]>([]);
   const [autoSizeWidgetIds, setAutoSizeWidgetIds] = React.useState<Set<string>>(() => new Set());
@@ -761,6 +754,8 @@ const EditableDashboard: React.FunctionComponent = () => {
     }
   }, [cancelNameChange, dashboard]);
 
+  const pendingScrollWidgetRef = React.useRef<string | null>(null);
+
   const handleAddWidgetFromBank = React.useCallback((widget: Widget) => {
     setRemovedWidgets((prev) => prev.filter((w) => w.id !== widget.id));
     setCanvasWidgets((prev) => {
@@ -770,6 +765,7 @@ const EditableDashboard: React.FunctionComponent = () => {
       return [...prev, { ...widget, rowSpan: MIN_ROW_SPAN }];
     });
     setAutoSizeWidgetIds((ids) => new Set(ids).add(widget.id));
+    pendingScrollWidgetRef.current = widget.id;
   }, []);
 
   const handleRemoveFromCanvas = React.useCallback(
@@ -832,6 +828,13 @@ const EditableDashboard: React.FunctionComponent = () => {
         next.delete(id);
         return next;
       });
+      if (pendingScrollWidgetRef.current === id) {
+        pendingScrollWidgetRef.current = null;
+        requestAnimationFrame(() => {
+          const el = document.querySelector(`[data-widget-id="${id}"]`);
+          el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+      }
     },
     []
   );
@@ -852,33 +855,35 @@ const EditableDashboard: React.FunctionComponent = () => {
     setCanvasWidgets(next);
   }, []);
 
-  const toggleWidgetDrawer = React.useCallback(() => {
+  const isAddWidgetsPanelOpen = helpPanelContext?.isAddWidgetsPanelOpen ?? false;
+
+  const toggleAddWidgets = React.useCallback(() => {
     if (isPrebuilt) {
       return;
     }
-    setIsWidgetDrawerOpen((open) => !open);
-  }, [isPrebuilt]);
+    if (isAddWidgetsPanelOpen) {
+      helpPanelContext?.closeHelpPanel();
+    } else {
+      helpPanelContext?.openHelpPanelWithTab('Dashboard widgets', { variant: 'in-page' });
+    }
+  }, [isPrebuilt, helpPanelContext, isAddWidgetsPanelOpen]);
 
-  const handleCopyConfigurationString = React.useCallback(() => {
+  const copyConfigString = React.useMemo(() => {
     if (!dashboard) {
-      return;
+      return '';
     }
     const raw = resolveDashboardCanvasWidgets(dashboard);
-    void navigator.clipboard
-      .writeText(
-        serializeDashboardConfigPayload({
-          dashboardId: dashboard.id,
-          name: dashboard.name,
-          widgets: raw ?? []
-        })
-      )
-      .then(() => {
-        triggerCopiedFeedback();
-      })
-      .finally(() => {
-        setIsKebabOpen(false);
-      });
-  }, [dashboard, triggerCopiedFeedback]);
+    return serializeDashboardConfigPayload({
+      dashboardId: dashboard.id,
+      name: dashboard.name,
+      widgets: raw ?? []
+    });
+  }, [dashboard]);
+
+  const handleOpenCopyConfigModal = React.useCallback(() => {
+    setIsKebabOpen(false);
+    setIsCopyConfigModalOpen(true);
+  }, []);
 
   const handleKebabDuplicate = React.useCallback(() => {
     if (!dashboard) {
@@ -934,7 +939,6 @@ const EditableDashboard: React.FunctionComponent = () => {
           className="hcc-editable-dashboard-toolbar-section"
           style={{
             paddingTop: 0,
-            paddingBottom: isAddWidgetsDrawerChromeOpen ? 0 : undefined,
             width: '100%',
             maxWidth: '100%',
             minWidth: 0,
@@ -1245,71 +1249,47 @@ const EditableDashboard: React.FunctionComponent = () => {
                       </Flex>
                     </FlexItem>
                   )}
-                  <FlexItem>
-                    <Switch
-                      id={`dashboard-autosave-${dashboard.id}`}
-                      label="Autosave"
-                      isChecked={autosaveEnabled}
-                      isDisabled={isPrebuilt}
-                      onChange={(_event, checked) => setAutosaveEnabled(checked)}
-                    />
-                  </FlexItem>
-                  <FlexItem>
-                    {isWidgetDrawerOpen ? (
-                      <Tabs
-                        id={`editable-dashboard-widget-tabs-${dashboard.id}`}
-                        aria-label={
-                          isPrebuilt
-                            ? 'Widgets unavailable on Console default dashboard'
-                            : 'Close widget panel'
-                        }
-                        isBox
-                        variant="secondary"
-                        activeKey="widgets-panel"
-                        onSelect={() => {
-                          if (!isPrebuilt) {
-                            toggleWidgetDrawer();
-                          }
-                        }}
-                        hasNoBorderBottom
-                        className="editable-dashboard-widget-panel-tabs"
+                  {isPrebuilt ? (
+                    <FlexItem>
+                      <Tooltip
+                        content="System default dashboards are not editable. Create a duplicate in order to edit this dashboard."
+                        position="bottom"
                       >
-                        <Tab
-                          eventKey="widgets-panel"
-                          isDisabled={isPrebuilt}
-                          title={
-                            <TabTitleText>
-                              <span className="editable-dashboard-toolbar-icon-label__inner">
-                                <span className="editable-dashboard-toolbar-icon-label__icon" aria-hidden>
-                                  <TimesCircleIcon />
-                                </span>
-                                <span className="editable-dashboard-toolbar-icon-label__label">Close</span>
-                              </span>
-                            </TabTitleText>
-                          }
+                        <Button
+                          variant="secondary"
+                          icon={<OutlinedCloneIcon />}
+                          onClick={handleKebabDuplicate}
+                        >
+                          Duplicate dashboard
+                        </Button>
+                      </Tooltip>
+                    </FlexItem>
+                  ) : (
+                    <>
+                      <FlexItem>
+                        <Switch
+                          id={`dashboard-autosave-${dashboard.id}`}
+                          label="Autosave"
+                          isChecked={autosaveEnabled}
+                          onChange={(_event, checked) => setAutosaveEnabled(checked)}
                         />
-                      </Tabs>
-                    ) : (
-                      <Button
-                        variant="plain"
-                        className="editable-dashboard-toolbar-plain-icon-action"
-                        onClick={toggleWidgetDrawer}
-                        isDisabled={isPrebuilt}
-                        title={
-                          isPrebuilt
-                            ? 'Widgets cannot be added to the built-in Console default dashboard.'
-                            : undefined
-                        }
-                      >
-                        <span className="editable-dashboard-toolbar-icon-label__inner">
-                          <span className="editable-dashboard-toolbar-icon-label__icon" aria-hidden>
-                            <PlusCircleIcon />
+                      </FlexItem>
+                      <FlexItem>
+                        <Button
+                          variant="plain"
+                          className={`editable-dashboard-toolbar-plain-icon-action${isAddWidgetsPanelOpen ? ' editable-dashboard-toolbar-plain-icon-action--active' : ''}`}
+                          onClick={toggleAddWidgets}
+                        >
+                          <span className="editable-dashboard-toolbar-icon-label__inner">
+                            <span className="editable-dashboard-toolbar-icon-label__icon" aria-hidden>
+                              <PlusCircleIcon />
+                            </span>
+                            <span className="editable-dashboard-toolbar-icon-label__label">Add widgets</span>
                           </span>
-                          <span className="editable-dashboard-toolbar-icon-label__label">Add widgets</span>
-                        </span>
-                      </Button>
-                    )}
-                  </FlexItem>
+                        </Button>
+                      </FlexItem>
+                    </>
+                  )}
                   <FlexItem>
                     <Dropdown
                       isOpen={isKebabOpen}
@@ -1317,14 +1297,6 @@ const EditableDashboard: React.FunctionComponent = () => {
                       onOpenChange={setIsKebabOpen}
                       popperProps={{ position: 'right' }}
                       toggle={(toggleRef) => (
-                        <Tooltip
-                          content={COPY_CONFIG_STRING_TOOLTIP_CONTENT}
-                          trigger="manual"
-                          isVisible={copiedTooltipVisible}
-                          entryDelay={0}
-                          position="bottom"
-                          aria-live="polite"
-                        >
                           <MenuToggle
                             ref={toggleRef}
                             aria-label="Dashboard actions"
@@ -1334,7 +1306,6 @@ const EditableDashboard: React.FunctionComponent = () => {
                           >
                             <EllipsisVIcon />
                           </MenuToggle>
-                        </Tooltip>
                       )}
                       shouldFocusToggleOnSelect
                     >
@@ -1367,12 +1338,12 @@ const EditableDashboard: React.FunctionComponent = () => {
                             {PIN_DASHBOARD_TO_SERVICES_MENU_LABEL}
                           </span>
                         </DropdownItem>
-                        <DropdownItem onClick={handleCopyConfigurationString}>
+                        <DropdownItem onClick={handleOpenCopyConfigModal}>
                           <span
                             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
                           >
-                            <CodeIcon style={{ color: 'var(--pf-t--global--icon--Color--200)' }} />
-                            {COPY_JSON_CONFIG_MENU_LABEL}
+                            <ShareAltIcon style={{ color: 'var(--pf-t--global--icon--Color--200)' }} />
+                            {SHARE_DASHBOARD_MENU_LABEL}
                           </span>
                         </DropdownItem>
                         <DropdownItem onClick={handleKebabDuplicate}>
@@ -1409,24 +1380,10 @@ const EditableDashboard: React.FunctionComponent = () => {
             </div>
           </div>
 
-          {!isPrebuilt && (
-            <AddWidgetsDrawer
-              isOpen={isWidgetDrawerOpen}
-              removedWidgets={removedWidgets}
-              onAddWidget={handleAddWidgetFromBank}
-            />
-          )}
           </div>
         </PageSection>
 
-        <PageSection
-          className="hcc-editable-dashboard-canvas-section"
-          style={
-            isAddWidgetsDrawerChromeOpen
-              ? { paddingTop: 'var(--pf-t--global--spacer--sm)' }
-              : undefined
-          }
-        >
+        <PageSection className="hcc-editable-dashboard-canvas-section">
           <EditableDashboardCanvas
             key={dashboard.id}
             canvasTitle={canvasSectionTitle}
@@ -1434,7 +1391,7 @@ const EditableDashboard: React.FunctionComponent = () => {
             onCanvasTitleCommit={(title) => updateCanvasTitle(dashboard.id, title)}
             canvasWidgets={canvasWidgets}
             autoSizeWidgetIds={autoSizeWidgetIds}
-            onOpenAddWidgets={() => setIsWidgetDrawerOpen(true)}
+            onOpenAddWidgets={toggleAddWidgets}
             onSizeChange={handleCanvasSizeChange}
             onAutoSizeFit={handleAutoSizeFit}
             onRemoveWidget={handleRemoveFromCanvas}
@@ -1446,10 +1403,7 @@ const EditableDashboard: React.FunctionComponent = () => {
   ) : null;
 
   return (
-    <div
-      className="editable-dashboard-page"
-      data-widget-drawer-open={isAddWidgetsDrawerChromeOpen ? '' : undefined}
-    >
+    <div className="editable-dashboard-page">
       <PageSection hasBodyWrapper={false}>
         <Breadcrumb>
           <RouterBreadcrumbItem to="/">Home</RouterBreadcrumbItem>
@@ -1476,6 +1430,11 @@ const EditableDashboard: React.FunctionComponent = () => {
 
       {dashboard ? (
         <>
+          <CopyConfigStringModal
+            isOpen={isCopyConfigModalOpen}
+            onClose={() => setIsCopyConfigModalOpen(false)}
+            configString={copyConfigString}
+          />
           <DuplicateDashboardModal
             isOpen={isDuplicateModalOpen}
             onClose={() => setIsDuplicateModalOpen(false)}

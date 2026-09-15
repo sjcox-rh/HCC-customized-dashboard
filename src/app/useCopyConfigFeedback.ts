@@ -5,6 +5,9 @@ const COPY_FEEDBACK_DURATION_MS = 2000;
 /** Menu / action label for copying a dashboard’s serialized JSON configuration. */
 export const COPY_JSON_CONFIG_MENU_LABEL = 'Copy JSON config';
 
+/** Menu / action label for the dropdown item that opens the copy-config modal. */
+export const SHARE_DASHBOARD_MENU_LABEL = 'Share dashboard';
+
 /** Menu / action label for importing a dashboard from pasted JSON configuration. */
 export const IMPORT_JSON_CONFIG_MENU_LABEL = 'Import JSON config';
 

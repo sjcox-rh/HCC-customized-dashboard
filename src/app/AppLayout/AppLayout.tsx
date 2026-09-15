@@ -152,6 +152,10 @@ interface HelpPanelContextType {
   openHelpPanelWithTab: (title: string, options?: { variant?: 'quickstart' | 'in-page' }) => void;
   /** Find help → Feedback → Share general feedback (breadcrumb screen). */
   openHelpPanelToShareGeneralFeedback: () => void;
+  /** Whether the help drawer is expanded and showing the "Dashboard widgets" custom view. */
+  isAddWidgetsPanelOpen: boolean;
+  /** Close the help panel. */
+  closeHelpPanel: () => void;
 }
 
 export const HelpPanelContext = React.createContext<HelpPanelContextType | undefined>(undefined);
@@ -3314,12 +3318,16 @@ const AppLayout: React.FunctionComponent<IAppLayout> = ({ children }) => {
 
   const renderHelpPanelBody = () => (
     <div data-hcc-help-shell="top-tabs-v2" style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      {renderHelpPanelTopTabs()}
-      <Divider
-        component="hr"
-        inset={{ default: 'insetNone' }}
-        className="help-panel-header-divider"
-      />
+      {customHelpTitle !== 'Dashboard widgets' && (
+        <>
+          {renderHelpPanelTopTabs()}
+          <Divider
+            component="hr"
+            inset={{ default: 'insetNone' }}
+            className="help-panel-header-divider"
+          />
+        </>
+      )}
       {customHelpTitle && customHelpVariant === 'quickstart' && (
         <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
           <Breadcrumb>
@@ -3894,38 +3902,28 @@ const AppLayout: React.FunctionComponent<IAppLayout> = ({ children }) => {
       isResizable
     >
       <DrawerHead>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
         <Title headingLevel="h2" size="lg">
-            Help
+            {customHelpTitle === 'Dashboard widgets' ? 'Add Widgets' : 'Help'}
         </Title>
-          <Button
-            variant="link"
-            isInline
-            component="a"
-            href="https://status.redhat.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ fontSize: '14px' }}
-          >
-            Red Hat status page
-            <ExternalLinkAltIcon style={{ marginLeft: '4px' }} />
-          </Button>
-        </div>
         <DrawerActions>
-          <Button
-            variant="plain"
-            aria-label="Back in help panel"
-            isDisabled={!canHelpPanelGoBack}
-            onClick={goHelpPanelBack}
-            icon={<AngleLeftIcon aria-hidden />}
-          />
-          <Button
-            variant="plain"
-            aria-label="Forward in help panel"
-            isDisabled={!canHelpPanelGoForward}
-            onClick={goHelpPanelForward}
-            icon={<AngleRightIcon aria-hidden />}
-          />
+          {customHelpTitle !== 'Dashboard widgets' && (
+            <>
+              <Button
+                variant="plain"
+                aria-label="Back in help panel"
+                isDisabled={!canHelpPanelGoBack}
+                onClick={goHelpPanelBack}
+                icon={<AngleLeftIcon aria-hidden />}
+              />
+              <Button
+                variant="plain"
+                aria-label="Forward in help panel"
+                isDisabled={!canHelpPanelGoForward}
+                onClick={goHelpPanelForward}
+                icon={<AngleRightIcon aria-hidden />}
+              />
+            </>
+          )}
           <DrawerCloseButton onClick={onDrawerClose} />
         </DrawerActions>
       </DrawerHead>
@@ -4353,7 +4351,7 @@ const AppLayout: React.FunctionComponent<IAppLayout> = ({ children }) => {
           <DrawerContent panelContent={notificationDrawerContent}>
             {/* Help Drawer (inner, left-side) */}
             <Drawer isExpanded={isDrawerExpanded} isInline>
-              <HelpPanelContext.Provider value={{ openHelpPanelWithTab, openHelpPanelToShareGeneralFeedback }}>
+              <HelpPanelContext.Provider value={{ openHelpPanelWithTab, openHelpPanelToShareGeneralFeedback, isAddWidgetsPanelOpen: isDrawerExpanded && customHelpTitle === 'Dashboard widgets', closeHelpPanel: onDrawerClose }}>
                 {/* Provider wraps DrawerContent so help panel tab bodies (e.g. Dashboard widgets) receive context, not only route children */}
                 <DrawerContent panelContent={drawerContent}>{children}</DrawerContent>
               </HelpPanelContext.Provider>

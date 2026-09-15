@@ -17,6 +17,9 @@ import {
   MenuItem,
   MenuList,
   MenuToggle,
+  Tab,
+  Tabs,
+  TabTitleText,
   TextInputGroup,
   TextInputGroupMain,
   TextInputGroupUtilities,
@@ -32,6 +35,8 @@ import {
 } from '@app/Homepage/bankWidgetSearch';
 import { useDashboardBankBridge } from '@app/Homepage/dashboardBankBridge';
 import { HOMEPAGE_WIDGET_CATALOG } from '@app/Homepage/homepageWidgetCatalog';
+import { WidgetBuilderSection } from '@app/Homepage/WidgetBuilderSection';
+import { ADD_WIDGETS_DRAWER_STYLES } from '@app/Homepage/addWidgetsDrawerStyles';
 import {
   createInitialPortfolioFilterState,
   filterWidgetsByPortfolioTags,
@@ -57,6 +62,7 @@ function FaFilterIcon() {
 const DashboardWidgetsHelpPanelContent: React.FunctionComponent = () => {
   const dashboardBank = useDashboardBankBridge();
   const helpPanelContext = useContext(HelpPanelContext);
+  const [activeTab, setActiveTab] = useState<string | number>('find-widgets');
   const [bankSearchInput, setBankSearchInput] = useState('');
   const [bankSearchQuery, setBankSearchQuery] = useState('');
   const [isExamplePromptsExpanded, setIsExamplePromptsExpanded] = useState(false);
@@ -89,6 +95,19 @@ const DashboardWidgetsHelpPanelContent: React.FunctionComponent = () => {
     () => filterWidgetsByPortfolioTags(searchMatchedWidgets, selectedPortfolioFilterIds),
     [searchMatchedWidgets, selectedPortfolioFilterIds]
   );
+
+  const { availableWidgets, alreadyAddedWidgets } = useMemo(() => {
+    const available: typeof visibleWidgets = [];
+    const added: typeof visibleWidgets = [];
+    for (const widget of visibleWidgets) {
+      if (dashboardBank?.canvasWidgetIds.has(widget.id)) {
+        added.push(widget);
+      } else {
+        available.push(widget);
+      }
+    }
+    return { availableWidgets: available, alreadyAddedWidgets: added };
+  }, [visibleWidgets, dashboardBank?.canvasWidgetIds]);
 
   const resetFindWidgetsSearchToDefault = useCallback(() => {
     setBankSearchInput('');
@@ -147,233 +166,261 @@ const DashboardWidgetsHelpPanelContent: React.FunctionComponent = () => {
     </EmptyStateFooter>
   );
 
+  const handleAddWidgetFromBuilder = useCallback(
+    (widget: import('@app/Homepage/widgetTypes').Widget) => {
+      dashboardBank?.addWidgetToDashboard(widget);
+    },
+    [dashboardBank]
+  );
+
+  const canAddWidgets = dashboardBank?.canAddWidgets ?? false;
+
+  const renderWidgetCard = useCallback(
+    (widget: import('@app/Homepage/widgetTypes').Widget) => {
+      const isOnCanvas = dashboardBank?.canvasWidgetIds.has(widget.id) ?? false;
+      const hasBridge = dashboardBank != null;
+      const addAllowed = !isOnCanvas && hasBridge && dashboardBank.canAddWidgets;
+      const disabledAddTooltip = isOnCanvas
+        ? ''
+        : !hasBridge
+          ? 'Open a dashboard from Dashboard Hub to add widgets.'
+          : !dashboardBank.canAddWidgets
+            ? 'Widgets cannot be added to the built-in Console default dashboard.'
+            : '';
+
+      return (
+        <div key={widget.id} role="listitem">
+          <BankWidgetCard
+            widget={widget}
+            onAdd={(w) => dashboardBank?.addWidgetToDashboard(w)}
+            onRemove={
+              isOnCanvas && dashboardBank?.canAddWidgets
+                ? (w) => dashboardBank.removeWidgetFromDashboard(w)
+                : undefined
+            }
+            isAlreadyOnDashboard={isOnCanvas}
+            addAllowed={addAllowed}
+            disabledAddTooltip={disabledAddTooltip}
+          />
+        </div>
+      );
+    },
+    [dashboardBank]
+  );
+
   return (
-    <div className="dashboard-widgets-help-panel" style={{ padding: '24px' }}>
-      <Flex
-        justifyContent={{ default: 'justifyContentSpaceBetween' }}
-        alignItems={{ default: 'alignItemsCenter' }}
-        flexWrap={{ default: 'wrap' }}
-        style={{
-          width: '100%',
-          gap: 'var(--pf-t--global--spacer--sm)',
-          marginBottom: '16px'
-        }}
+    <div className="dashboard-widgets-help-panel">
+      <style>{ADD_WIDGETS_DRAWER_STYLES}</style>
+      <Tabs
+        activeKey={activeTab}
+        onSelect={(_e, key) => setActiveTab(key)}
+        isFilled
+        aria-label="Add widgets tabs"
+        style={{ marginBottom: 0 }}
       >
-        <FlexItem>
-          <Title headingLevel="h2" size="xl" style={{ margin: 0 }}>
-            All dashboard widgets
-          </Title>
-        </FlexItem>
-        <FlexItem>
-          <Button variant="secondary" size="sm" type="button" onClick={openRequestNewWidgetTab}>
-            Request a new widget
-          </Button>
-        </FlexItem>
-      </Flex>
-
-      <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }} style={{ width: '100%' }}>
-        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }} style={{ width: '100%' }}>
-          <form
-            onSubmit={(e) => e.preventDefault()}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                submitBankSearch();
-              }
-            }}
-            style={{ width: '100%' }}
-          >
+        <Tab eventKey="find-widgets" title={<TabTitleText>Find widgets</TabTitleText>}>
+          <div style={{ padding: '24px' }}>
             <Flex
-              alignItems={{ default: 'alignItemsCenter' }}
-              spaceItems={{ default: 'spaceItemsSm' }}
-              style={{ width: '100%' }}
-            >
-              <FlexItem flex={{ default: 'flex_1' }} style={{ minWidth: 0 }}>
-                <TextInputGroup style={{ width: '100%' }}>
-                  <TextInputGroupMain
-                    inputId="dashboard-widgets-help-search"
-                    icon={
-                      <img
-                        src={SparkleIcon}
-                        alt=""
-                        aria-hidden
-                        width={16}
-                        height={16}
-                        style={{ display: 'block' }}
-                      />
-                    }
-                    placeholder="What do you need your widget to do?"
-                    value={bankSearchInput}
-                    onChange={(_e, v) => {
-                      if (v.trim() === '') {
-                        resetFindWidgetsSearchToDefault();
-                      } else {
-                        setBankSearchInput(v);
-                      }
-                    }}
-                    name="dashboard-widgets-help-search"
-                    type="text"
-                    aria-label="What you need your widget to do; press Enter to search"
-                  />
-                  {!!bankSearchInput && (
-                    <TextInputGroupUtilities>
-                      <Button
-                        variant="plain"
-                        type="button"
-                        aria-label="Clear search"
-                        icon={<TimesIcon />}
-                        onClick={resetFindWidgetsSearchToDefault}
-                      />
-                    </TextInputGroupUtilities>
-                  )}
-                </TextInputGroup>
-              </FlexItem>
-              <FlexItem>
-                <Dropdown
-                  isOpen={isPortfolioFilterOpen}
-                  onOpenChange={setIsPortfolioFilterOpen}
-                  onSelect={onPortfolioFilterSelect}
-                  shouldFocusToggleOnSelect={false}
-                  popperProps={{ direction: 'down', position: 'end', enableFlip: true }}
-                  toggle={(toggleRef) => (
-                    <MenuToggle
-                      ref={toggleRef}
-                      variant="plain"
-                      aria-label="Filter widgets by portfolio"
-                      icon={<FaFilterIcon />}
-                      isExpanded={isPortfolioFilterOpen}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsPortfolioFilterOpen(!isPortfolioFilterOpen);
-                      }}
-                    />
-                  )}
-                >
-                  <MenuList aria-label="Portfolio filters">
-                    {WIDGET_PORTFOLIO_FILTERS.map(({ id, label }) => (
-                      <MenuItem key={id} itemId={id} hasCheckbox isSelected={portfolioFilters[id] ?? false}>
-                        {label}
-                      </MenuItem>
-                    ))}
-                  </MenuList>
-                </Dropdown>
-              </FlexItem>
-            </Flex>
-          </form>
-
-          <Content
-            component="p"
-            style={{
-              color: 'var(--pf-t--global--text--color--subtle, var(--pf-v6-global--Color--200))',
-              fontSize: 'var(--pf-t--global--font--size--body--default)',
-              margin: 0
-            }}
-          >
-            Hit &lsquo;Enter&rsquo; to send search query
-          </Content>
-
-          {activePortfolioFilterIdsOrdered.length > 0 && (
-            <Flex
+              justifyContent={{ default: 'justifyContentSpaceBetween' }}
               alignItems={{ default: 'alignItemsCenter' }}
               flexWrap={{ default: 'wrap' }}
-              spaceItems={{ default: 'spaceItemsMd' }}
-              style={{ width: '100%', rowGap: 'var(--pf-t--global--spacer--xs)' }}
+              style={{
+                width: '100%',
+                gap: 'var(--pf-t--global--spacer--sm)',
+                marginBottom: '16px'
+              }}
             >
-              <LabelGroup aria-label="Active portfolio filters">
-                {activePortfolioFilterIdsOrdered.map((filterId) => (
-                  <Label key={filterId} onClose={() => removePortfolioFilter(filterId)}>
-                    {getPortfolioFilterLabel(filterId)}
-                  </Label>
-                ))}
-              </LabelGroup>
-              <Button variant="link" isInline type="button" onClick={clearAllPortfolioFilters}>
-                Clear filters
-              </Button>
+              <FlexItem>
+                <Title headingLevel="h3" size="lg" style={{ margin: 0 }}>
+                  Find widgets
+                </Title>
+              </FlexItem>
+              <FlexItem>
+                <Button variant="secondary" size="sm" type="button" onClick={openRequestNewWidgetTab}>
+                  Request a new widget
+                </Button>
+              </FlexItem>
             </Flex>
-          )}
-        </Flex>
 
-        {!bankSearchQuery.trim() && (
-          <ExpandableSection
-            className="dashboard-widgets-help-example-prompts"
-            isExpanded={isExamplePromptsExpanded}
-            onToggle={(_e, isExpanded) => setIsExamplePromptsExpanded(isExpanded)}
-            toggleText="Show example prompts"
-          >
-            <List isPlain>
-              {EXAMPLE_BANK_SEARCH_PROMPTS.map((prompt) => (
-                <ListItem key={prompt}>
-                  <Button
-                    variant="link"
-                    isInline
-                    type="button"
-                    onClick={() => applyExamplePromptSearch(prompt)}
-                    aria-label={`Search widgets: ${prompt}`}
-                  >
-                    {prompt}
-                  </Button>
-                </ListItem>
-              ))}
-            </List>
-          </ExpandableSection>
-        )}
-
-        <Content
-          component="p"
-          aria-live="polite"
-          style={{
-            color: 'var(--pf-t--global--text--color--subtle, var(--pf-v6-global--Color--200))',
-            fontSize: 'var(--pf-t--global--font--size--body--default)',
-            fontWeight: 'var(--pf-t--global--font--weight--body--bold)',
-            marginTop: 0,
-            marginBottom: 'var(--pf-t--global--spacer--md)'
-          }}
-        >
-          Showing {visibleWidgets.length} of {searchMatchedWidgets.length} available{' '}
-          {searchMatchedWidgets.length === 1 ? 'widget' : 'widgets'}
-        </Content>
-
-        {visibleWidgets.length === 0 ? (
-          <EmptyState variant="xs" headingLevel="h4" titleText="No matching widgets" icon={CubesIcon}>
-            <EmptyStateBody>
-              Try a different search query, adjust portfolio filters, or clear filters to see more widgets.
-            </EmptyStateBody>
-            {widgetCatalogEmptyActions}
-          </EmptyState>
-        ) : (
-          <div className="removed-widgets-grid add-widgets-bank-grid" role="list">
-            {visibleWidgets.map((widget) => {
-              const isOnCanvas = dashboardBank?.canvasWidgetIds.has(widget.id) ?? false;
-              const hasBridge = dashboardBank != null;
-              const addAllowed = !isOnCanvas && hasBridge && dashboardBank.canAddWidgets;
-              const disabledAddTooltip = isOnCanvas
-                ? ''
-                : !hasBridge
-                  ? 'Open a dashboard from Dashboard Hub to add widgets.'
-                  : !dashboardBank.canAddWidgets
-                    ? 'Widgets cannot be added to the built-in Console default dashboard.'
-                    : '';
-
-              return (
-                <div key={widget.id} role="listitem">
-                  <BankWidgetCard
-                    widget={widget}
-                    onAdd={(w) => dashboardBank?.addWidgetToDashboard(w)}
-                    onRemove={
-                      isOnCanvas && dashboardBank?.canAddWidgets
-                        ? (w) => dashboardBank.removeWidgetFromDashboard(w)
-                        : undefined
+            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }} style={{ width: '100%' }}>
+              <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }} style={{ width: '100%' }}>
+                <form
+                  onSubmit={(e) => e.preventDefault()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      submitBankSearch();
                     }
-                    isAlreadyOnDashboard={isOnCanvas}
-                    addAllowed={addAllowed}
-                    disabledAddTooltip={disabledAddTooltip}
-                  />
-                </div>
-              );
-            })}
+                  }}
+                  style={{ width: '100%' }}
+                >
+                  <Flex
+                    alignItems={{ default: 'alignItemsCenter' }}
+                    spaceItems={{ default: 'spaceItemsSm' }}
+                    style={{ width: '100%' }}
+                  >
+                    <FlexItem flex={{ default: 'flex_1' }} style={{ minWidth: 0 }}>
+                      <TextInputGroup style={{ width: '100%' }}>
+                        <TextInputGroupMain
+                          inputId="dashboard-widgets-help-search"
+                          icon={
+                            <img
+                              src={SparkleIcon}
+                              alt=""
+                              aria-hidden
+                              width={16}
+                              height={16}
+                              style={{ display: 'block' }}
+                            />
+                          }
+                          placeholder="What do you need your widget to do?"
+                          value={bankSearchInput}
+                          onChange={(_e, v) => {
+                            if (v.trim() === '') {
+                              resetFindWidgetsSearchToDefault();
+                            } else {
+                              setBankSearchInput(v);
+                            }
+                          }}
+                          name="dashboard-widgets-help-search"
+                          type="text"
+                          aria-label="What you need your widget to do; press Enter to search"
+                        />
+                        {!!bankSearchInput && (
+                          <TextInputGroupUtilities>
+                            <Button
+                              variant="plain"
+                              type="button"
+                              aria-label="Clear search"
+                              icon={<TimesIcon />}
+                              onClick={resetFindWidgetsSearchToDefault}
+                            />
+                          </TextInputGroupUtilities>
+                        )}
+                      </TextInputGroup>
+                    </FlexItem>
+                    <FlexItem>
+                      <Dropdown
+                        isOpen={isPortfolioFilterOpen}
+                        onOpenChange={setIsPortfolioFilterOpen}
+                        onSelect={onPortfolioFilterSelect}
+                        shouldFocusToggleOnSelect={false}
+                        popperProps={{ direction: 'down', position: 'end', enableFlip: true }}
+                        toggle={(toggleRef) => (
+                          <MenuToggle
+                            ref={toggleRef}
+                            variant="plain"
+                            aria-label="Filter widgets by portfolio"
+                            icon={<FaFilterIcon />}
+                            isExpanded={isPortfolioFilterOpen}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsPortfolioFilterOpen(!isPortfolioFilterOpen);
+                            }}
+                          />
+                        )}
+                      >
+                        <MenuList aria-label="Portfolio filters">
+                          {WIDGET_PORTFOLIO_FILTERS.map(({ id, label }) => (
+                            <MenuItem key={id} itemId={id} hasCheckbox isSelected={portfolioFilters[id] ?? false}>
+                              {label}
+                            </MenuItem>
+                          ))}
+                        </MenuList>
+                      </Dropdown>
+                    </FlexItem>
+                  </Flex>
+                </form>
+
+                {activePortfolioFilterIdsOrdered.length > 0 && (
+                  <Flex
+                    alignItems={{ default: 'alignItemsCenter' }}
+                    flexWrap={{ default: 'wrap' }}
+                    spaceItems={{ default: 'spaceItemsMd' }}
+                    style={{ width: '100%', rowGap: 'var(--pf-t--global--spacer--xs)' }}
+                  >
+                    <LabelGroup aria-label="Active portfolio filters">
+                      {activePortfolioFilterIdsOrdered.map((filterId) => (
+                        <Label key={filterId} onClose={() => removePortfolioFilter(filterId)}>
+                          {getPortfolioFilterLabel(filterId)}
+                        </Label>
+                      ))}
+                    </LabelGroup>
+                    <Button variant="link" isInline type="button" onClick={clearAllPortfolioFilters}>
+                      Clear filters
+                    </Button>
+                  </Flex>
+                )}
+              </Flex>
+
+              {!bankSearchQuery.trim() && (
+                <ExpandableSection
+                  className="dashboard-widgets-help-example-prompts"
+                  isExpanded={isExamplePromptsExpanded}
+                  onToggle={(_e, isExpanded) => setIsExamplePromptsExpanded(isExpanded)}
+                  toggleText="Show example prompts"
+                >
+                  <List isPlain>
+                    {EXAMPLE_BANK_SEARCH_PROMPTS.map((prompt) => (
+                      <ListItem key={prompt}>
+                        <Button
+                          variant="link"
+                          isInline
+                          type="button"
+                          onClick={() => applyExamplePromptSearch(prompt)}
+                          aria-label={`Search widgets: ${prompt}`}
+                        >
+                          {prompt}
+                        </Button>
+                      </ListItem>
+                    ))}
+                  </List>
+                </ExpandableSection>
+              )}
+
+              {visibleWidgets.length === 0 ? (
+                <EmptyState variant="xs" headingLevel="h4" titleText="No matching widgets" icon={CubesIcon}>
+                  <EmptyStateBody>
+                    Try a different search query, adjust portfolio filters, or clear filters to see more widgets.
+                  </EmptyStateBody>
+                  {widgetCatalogEmptyActions}
+                </EmptyState>
+              ) : (
+                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }} style={{ width: '100%' }}>
+                  {availableWidgets.length > 0 && (
+                    <FlexItem style={{ width: '100%' }}>
+                      <Title headingLevel="h4" size="md" style={{ marginBottom: 'var(--pf-t--global--spacer--sm)' }}>
+                        Available to add ({availableWidgets.length})
+                      </Title>
+                      <div className="removed-widgets-grid add-widgets-bank-grid" role="list">
+                        {availableWidgets.map(renderWidgetCard)}
+                      </div>
+                    </FlexItem>
+                  )}
+                  {alreadyAddedWidgets.length > 0 && (
+                    <FlexItem style={{ width: '100%' }}>
+                      <Title headingLevel="h4" size="md" style={{ marginBottom: 'var(--pf-t--global--spacer--sm)' }}>
+                        Already on dashboard ({alreadyAddedWidgets.length})
+                      </Title>
+                      <div className="removed-widgets-grid add-widgets-bank-grid" role="list">
+                        {alreadyAddedWidgets.map(renderWidgetCard)}
+                      </div>
+                    </FlexItem>
+                  )}
+                </Flex>
+              )}
+            </Flex>
           </div>
-        )}
-      </Flex>
+        </Tab>
+        <Tab eventKey="widget-builder" title={<TabTitleText>Widget builder</TabTitleText>}>
+          <div style={{ padding: '24px' }}>
+            <WidgetBuilderSection
+              onAddWidget={handleAddWidgetFromBuilder}
+              canAddWidgets={canAddWidgets}
+            />
+          </div>
+        </Tab>
+      </Tabs>
     </div>
   );
 };

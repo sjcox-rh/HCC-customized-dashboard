@@ -47,6 +47,7 @@ import {
   OutlinedWindowRestoreIcon,
   PencilAltIcon,
   PlusCircleIcon,
+  ShareAltIcon,
   ThIcon,
   ThumbtackIcon
 } from '@app/icons/rhUiIcons';
@@ -56,16 +57,15 @@ import { useDashboardData } from '@app/DashboardHub/DashboardDataContext';
 import { DASHBOARD_DUPLICATE_NAME_ERROR } from '@app/DashboardHub/dashboardHubMockData';
 import { resolveDashboardCanvasWidgets, serializeDashboardConfigPayload } from '@app/DashboardHub/dashboardCanvasStorage';
 import { isPrebuiltHubRow } from '@app/DashboardHub/prebuiltDashboards';
+import { CopyConfigStringModal } from '@app/DashboardHub/CopyConfigStringModal';
 import { DeleteDashboardModal } from '@app/DashboardHub/DeleteDashboardModal';
 import { DuplicateDashboardModal } from '@app/DashboardHub/DuplicateDashboardModal';
 import { ImportConfigStringModal } from '@app/DashboardHub/ImportConfigStringModal';
 import { PinDashboardModal } from '@app/DashboardHub/PinDashboardModal';
 import {
-  COPY_CONFIG_STRING_TOOLTIP_CONTENT,
-  COPY_JSON_CONFIG_MENU_LABEL,
   IMPORT_JSON_CONFIG_MENU_LABEL,
   PIN_DASHBOARD_TO_SERVICES_MENU_LABEL,
-  useCopyConfigRowFeedback
+  SHARE_DASHBOARD_MENU_LABEL,
 } from '@app/useCopyConfigFeedback';
 
 const CREATE_BLANK_DASHBOARD_FORM_ID = 'create-blank-dashboard-form';
@@ -126,7 +126,8 @@ const DashboardHub: React.FunctionComponent = () => {
   const [importModalInitialHomepage, setImportModalInitialHomepage] = React.useState(false);
   const [deleteTargetRow, setDeleteTargetRow] = React.useState<HubRow | null>(null);
   const [pinModalTargetRow, setPinModalTargetRow] = React.useState<HubRow | null>(null);
-  const { copiedFeedbackRowId, triggerCopiedFeedbackForRow } = useCopyConfigRowFeedback();
+  const [copyConfigModalString, setCopyConfigModalString] = React.useState('');
+  const [isCopyConfigModalOpen, setIsCopyConfigModalOpen] = React.useState(false);
 
   type HubNavFromHome = { fromHome?: { openCreate?: 'blank' | 'import' | 'duplicate' } };
 
@@ -241,22 +242,16 @@ const DashboardHub: React.FunctionComponent = () => {
   const handleCopyRowConfiguration = React.useCallback(
     (row: HubRow) => {
       const raw = resolveDashboardCanvasWidgets(row);
-      void navigator.clipboard
-        .writeText(
-          serializeDashboardConfigPayload({
-            dashboardId: row.id,
-            name: row.name,
-            widgets: raw ?? []
-          })
-        )
-        .then(() => {
-          triggerCopiedFeedbackForRow(row.id);
-        })
-        .finally(() => {
-          setOpenActionsRowId(null);
-        });
+      const configStr = serializeDashboardConfigPayload({
+        dashboardId: row.id,
+        name: row.name,
+        widgets: raw ?? []
+      });
+      setCopyConfigModalString(configStr);
+      setIsCopyConfigModalOpen(true);
+      setOpenActionsRowId(null);
     },
-    [triggerCopiedFeedbackForRow]
+    []
   );
 
   const handleTableSort: OnSort = React.useCallback((_event, columnIndex) => {
@@ -479,14 +474,6 @@ const DashboardHub: React.FunctionComponent = () => {
                     onOpenChange={(isOpen: boolean) => setOpenActionsRowId(isOpen ? row.id : null)}
                     popperProps={{ position: 'end' }}
                     toggle={(toggleRef: React.Ref<HTMLButtonElement>) => (
-                      <Tooltip
-                        content={COPY_CONFIG_STRING_TOOLTIP_CONTENT}
-                        trigger="manual"
-                        isVisible={copiedFeedbackRowId === row.id}
-                        entryDelay={0}
-                        position="bottom"
-                        aria-live="polite"
-                      >
                         <MenuToggle
                           ref={toggleRef}
                           variant="plain"
@@ -499,29 +486,26 @@ const DashboardHub: React.FunctionComponent = () => {
                         >
                           <EllipsisVIcon />
                         </MenuToggle>
-                      </Tooltip>
                     )}
                     shouldFocusToggleOnSelect
                   >
                     <DropdownList>
-                      <DropdownItem
-                        key="edit"
-                        isDisabled={isPrebuiltHubRow(row)}
-                        onClick={() => {
-                          if (isPrebuiltHubRow(row)) {
-                            return;
-                          }
-                          navigate(`/dashboard-hub/${row.id}`);
-                          setOpenActionsRowId(null);
-                        }}
-                      >
-                        <span
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                      {!isPrebuiltHubRow(row) && (
+                        <DropdownItem
+                          key="edit"
+                          onClick={() => {
+                            navigate(`/dashboard-hub/${row.id}`);
+                            setOpenActionsRowId(null);
+                          }}
                         >
-                          <PencilAltIcon style={{ color: 'var(--pf-t--global--icon--Color--200)' }} />
-                          Edit dashboard
-                        </span>
-                      </DropdownItem>
+                          <span
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                          >
+                            <PencilAltIcon style={{ color: 'var(--pf-t--global--icon--Color--200)' }} />
+                            Edit dashboard
+                          </span>
+                        </DropdownItem>
+                      )}
                       <DropdownItem
                         key="homepage"
                         isDisabled={Boolean(row.isHomepage)}
@@ -545,6 +529,11 @@ const DashboardHub: React.FunctionComponent = () => {
                       </DropdownItem>
                       <DropdownItem
                         key="duplicate"
+                        description={
+                          isPrebuiltHubRow(row)
+                            ? 'System default dashboards are not editable. Create a duplicate in order to edit this dashboard.'
+                            : undefined
+                        }
                         onClick={() => {
                           setDuplicateModalInitialSourceId(row.id);
                           setDuplicateModalInitialHomepage(false);
@@ -577,8 +566,8 @@ const DashboardHub: React.FunctionComponent = () => {
                         <span
                           style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
                         >
-                          <CodeIcon style={{ color: 'var(--pf-t--global--icon--Color--200)' }} />
-                          {COPY_JSON_CONFIG_MENU_LABEL}
+                          <ShareAltIcon style={{ color: 'var(--pf-t--global--icon--Color--200)' }} />
+                          {SHARE_DASHBOARD_MENU_LABEL}
                         </span>
                       </DropdownItem>
                       <Divider component="li" role="separator" />
@@ -674,6 +663,12 @@ const DashboardHub: React.FunctionComponent = () => {
           </Button>
         </ModalFooter>
       </Modal>
+
+      <CopyConfigStringModal
+        isOpen={isCopyConfigModalOpen}
+        onClose={() => setIsCopyConfigModalOpen(false)}
+        configString={copyConfigModalString}
+      />
 
       <DuplicateDashboardModal
         isOpen={isDuplicateModalOpen}

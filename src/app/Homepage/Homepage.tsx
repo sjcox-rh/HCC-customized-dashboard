@@ -31,12 +31,14 @@ import {
   RhUiAsleepIcon,
   RhUiDarkModeIcon,
   RhUiLightModeIcon,
+  ShareAltIcon,
   ThumbtackIcon
 } from '@app/icons/rhUiIcons';
 import { Link, useNavigate } from 'react-router-dom';
 import { CONSOLE_DEFAULT_BODY_TITLE } from '@app/DashboardHub/consoleDefaultDashboard';
 import { getPrebuiltDashboardAutoSizeWidgetIds, isConsoleDefaultHubRow, isPrebuiltHubRow } from '@app/DashboardHub/prebuiltDashboards';
 import { useDashboardData } from '@app/DashboardHub/DashboardDataContext';
+import { CopyConfigStringModal } from '@app/DashboardHub/CopyConfigStringModal';
 import { DuplicateDashboardModal } from '@app/DashboardHub/DuplicateDashboardModal';
 import { PinDashboardModal } from '@app/DashboardHub/PinDashboardModal';
 import {
@@ -46,11 +48,9 @@ import {
   serializeDashboardConfigPayload
 } from '@app/DashboardHub/dashboardCanvasStorage';
 import {
-  COPY_CONFIG_STRING_TOOLTIP_CONTENT,
-  COPY_JSON_CONFIG_MENU_LABEL,
   IMPORT_JSON_CONFIG_MENU_LABEL,
   PIN_DASHBOARD_TO_SERVICES_MENU_LABEL,
-  useCopyConfigFeedback
+  SHARE_DASHBOARD_MENU_LABEL,
 } from '@app/useCopyConfigFeedback';
 import type { ColumnSpan, RowSpan, Widget } from '@app/Homepage/widgetTypes';
 import {
@@ -144,7 +144,7 @@ const Homepage: React.FunctionComponent = () => {
   const [isHomepageHeroMenuOpen, setIsHomepageHeroMenuOpen] = useState(false);
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
   const [isPinDashboardModalOpen, setIsPinDashboardModalOpen] = useState(false);
-  const { copiedTooltipVisible, triggerCopiedFeedback } = useCopyConfigFeedback();
+  const [isCopyConfigModalOpen, setIsCopyConfigModalOpen] = useState(false);
 
   const closeHomepageHeroMenu = useCallback(() => {
     setIsHomepageHeroMenuOpen(false);
@@ -253,26 +253,22 @@ const Homepage: React.FunctionComponent = () => {
     }
   }, [homepageDashboard]);
 
-  const handleCopyConfigurationString = useCallback(() => {
+  const copyConfigString = useMemo(() => {
     if (!homepageDashboard) {
-      return;
+      return '';
     }
     const raw = resolveDashboardCanvasWidgets(homepageDashboard);
-    void navigator.clipboard
-      .writeText(
-        serializeDashboardConfigPayload({
-          dashboardId: homepageDashboard.id,
-          name: homepageDashboard.name,
-          widgets: raw ?? []
-        })
-      )
-      .then(() => {
-        triggerCopiedFeedback();
-      })
-      .finally(() => {
-        closeHomepageKebab();
-      });
-  }, [closeHomepageKebab, homepageDashboard, triggerCopiedFeedback]);
+    return serializeDashboardConfigPayload({
+      dashboardId: homepageDashboard.id,
+      name: homepageDashboard.name,
+      widgets: raw ?? []
+    });
+  }, [homepageDashboard]);
+
+  const handleOpenCopyConfigModal = useCallback(() => {
+    closeHomepageKebab();
+    setIsCopyConfigModalOpen(true);
+  }, [closeHomepageKebab]);
 
   return (
     <>
@@ -368,23 +364,28 @@ const Homepage: React.FunctionComponent = () => {
                             closeHomepageHeroMenu();
                           }}
                           actions={
-                            <MenuItemAction
-                              icon={<PencilAltIcon />}
-                              aria-label={
-                                isPrebuiltHubRow(row)
-                                  ? `Edit ${row.name} (not available, system dashboards are not editable)`
-                                  : `Edit ${row.name}`
-                              }
-                              isDisabled={isPrebuiltHubRow(row)}
-                              onClick={(e) => {
-                                e?.stopPropagation?.();
-                                if (isPrebuiltHubRow(row)) {
-                                  return;
-                                }
-                                closeHomepageHeroMenu();
-                                navigate(`/dashboard-hub/${row.id}`);
-                              }}
-                            />
+                            isPrebuiltHubRow(row) ? (
+                              <Tooltip content="System default dashboards are uneditable.">
+                                <MenuItemAction
+                                  icon={<PencilAltIcon />}
+                                  aria-label={`Edit ${row.name} (not available, system dashboards are uneditable)`}
+                                  isDisabled
+                                  onClick={(e) => {
+                                    e?.stopPropagation?.();
+                                  }}
+                                />
+                              </Tooltip>
+                            ) : (
+                              <MenuItemAction
+                                icon={<PencilAltIcon />}
+                                aria-label={`Edit ${row.name}`}
+                                onClick={(e) => {
+                                  e?.stopPropagation?.();
+                                  closeHomepageHeroMenu();
+                                  navigate(`/dashboard-hub/${row.id}`);
+                                }}
+                              />
+                            )
                           }
                         >
                           {row.name}
@@ -514,14 +515,6 @@ const Homepage: React.FunctionComponent = () => {
                         onOpenChange={setIsHomepageKebabOpen}
                         popperProps={{ position: 'end' }}
                         toggle={(toggleRef: React.Ref<HTMLButtonElement>) => (
-                          <Tooltip
-                            content={COPY_CONFIG_STRING_TOOLTIP_CONTENT}
-                            trigger="manual"
-                            isVisible={copiedTooltipVisible}
-                            entryDelay={0}
-                            position="bottom"
-                            aria-live="polite"
-                          >
                             <MenuToggle
                               ref={toggleRef}
                               variant="plain"
@@ -533,17 +526,16 @@ const Homepage: React.FunctionComponent = () => {
                             >
                               <EllipsisVIcon />
                             </MenuToggle>
-                          </Tooltip>
                         )}
                         shouldFocusToggleOnSelect
                       >
                         <DropdownList>
-                          <DropdownItem key="copy-config" onClick={handleCopyConfigurationString}>
+                          <DropdownItem key="copy-config" onClick={handleOpenCopyConfigModal}>
                             <span
                               style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
                             >
-                              <CodeIcon style={{ color: 'var(--pf-t--global--icon--Color--200)' }} />
-                              {COPY_JSON_CONFIG_MENU_LABEL}
+                              <ShareAltIcon style={{ color: 'var(--pf-t--global--icon--Color--200)' }} />
+                              {SHARE_DASHBOARD_MENU_LABEL}
                             </span>
                           </DropdownItem>
                           <DropdownItem
@@ -590,18 +582,15 @@ const Homepage: React.FunctionComponent = () => {
                     </FlexItem>
                     <FlexItem>
                       {isPrebuiltHubRow(homepageDashboard) ? (
-                        <Tooltip content={`The '${homepageDashboard.name}' dashboard is not editable.`}>
-                          <span style={{ display: 'inline-block' }} tabIndex={0}>
-                            <Button
-                              variant="secondary"
-                              icon={<PencilAltIcon />}
-                              iconPosition="start"
-                              isDisabled
-                              aria-label={`Edit dashboard (not available for ${homepageDashboard.name})`}
-                            >
-                              Edit dashboard
-                            </Button>
-                          </span>
+                        <Tooltip content="System default dashboards are not editable. Create a duplicate in order to edit this dashboard.">
+                          <Button
+                            variant="secondary"
+                            icon={<OutlinedCloneIcon />}
+                            iconPosition="start"
+                            onClick={() => setIsDuplicateModalOpen(true)}
+                          >
+                            Duplicate dashboard
+                          </Button>
                         </Tooltip>
                       ) : (
                         <Button
@@ -678,18 +667,15 @@ const Homepage: React.FunctionComponent = () => {
                   </EmptyStateBody>
                   <EmptyStateFooter>
                     {isPrebuiltHubRow(homepageDashboard) ? (
-                      <Tooltip content={`The '${homepageDashboard.name}' dashboard is not editable.`}>
-                        <span style={{ display: 'inline-block' }} tabIndex={0}>
-                          <Button
-                            variant="primary"
-                            icon={<PencilAltIcon />}
-                            iconPosition="start"
-                            isDisabled
-                            aria-label={`Edit dashboard (not available for ${homepageDashboard.name})`}
-                          >
-                            Edit dashboard
-                          </Button>
-                        </span>
+                      <Tooltip content="System default dashboards are not editable. Create a duplicate in order to edit this dashboard.">
+                        <Button
+                          variant="primary"
+                          icon={<OutlinedCloneIcon />}
+                          iconPosition="start"
+                          onClick={() => setIsDuplicateModalOpen(true)}
+                        >
+                          Duplicate dashboard
+                        </Button>
                       </Tooltip>
                     ) : (
                       <Button
@@ -715,6 +701,11 @@ const Homepage: React.FunctionComponent = () => {
           </Content>
         )}
       </PageSection>
+      <CopyConfigStringModal
+        isOpen={isCopyConfigModalOpen}
+        onClose={() => setIsCopyConfigModalOpen(false)}
+        configString={copyConfigString}
+      />
       <DuplicateDashboardModal
         isOpen={isDuplicateModalOpen && Boolean(homepageDashboard)}
         onClose={closeDuplicateModal}
