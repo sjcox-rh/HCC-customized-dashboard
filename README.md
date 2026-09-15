@@ -1,53 +1,48 @@
-# HCC AI Widget Builder
+# HCC Enhanced Dashboard UI — SJ's Prototype
 
-An internal UX prototype used to explore and demonstrate UI/UX design concepts for AI-powered dashboard and widget-building experiences.
-
-### 🔗 Live Prototype
-https://maryshak1996.github.io/hcc-nextgenui-widget-builder/prototype/
-
-*(PCM integration demo, separate deploy: https://maryshak1996.github.io/hcc-nextgenui-widget-builder/)*
-
-### 🎨 Design Preview
-**Figma Working Design File:**  
-https://www.figma.com/design/c1GHDIdhEGkwVZ0jt65q9q/NextGenUI-Dashboard-Widgets?node-id=0-1&t=KZCfD9CcCWUCEmvo-1
-
-[![NextGenUI Dashboard Design Preview](./assets/figma-preview.png)](https://www.figma.com/design/c1GHDIdhEGkwVZ0jt65q9q/NextGenUI-Dashboard-Widgets?node-id=0-1&t=KZCfD9CcCWUCEmvo-1)
+A customized UX prototype exploring enhanced dashboard experiences for the Hybrid Cloud Console, built on top of the [HCC AI Widget Builder](https://github.com/maryshak1996/hcc-nextgenui-widget-builder) by Mary Shakshober.
 
 ---
 
-## 🎯 Purpose
+## What's Changed
 
-This application is a working prototype designed for:
+This prototype extends the original with the following UX enhancements:
 
-- Stakeholder demos  
-- UX concept validation  
-- Interaction exploration  
-- Layout and widget experimentation  
-- Rapid iteration on dashboard builder ideas  
+### Add Widgets in Help Panel
+- Moved the "Add Widgets" UI from a standalone drawer into the existing help side panel
+- Two tabs: **Find widgets** (catalog with available/already-added sections) and **Widget builder** (code editor + live preview)
+- Help panel header dynamically shows "Add Widgets" when that view is active
+- "Add widgets" toolbar button shows active state while the panel is open and toggles it closed on re-click
 
-This is not a production product — it is a design exploration environment.
+### Share Dashboard Modal
+- "Copy JSON config" action replaced with a **Share dashboard** modal
+- Modal displays the full JSON config in a read-only clipboard block with descriptive text explaining how to share dashboards with others in your organization
+- Dropdown menu items renamed from "Copy JSON config" to "Share dashboard" with a share icon
+
+### Prebuilt Dashboard UX
+- Disabled "Edit dashboard" buttons replaced with enabled **Duplicate dashboard** CTA for system default dashboards
+- Tooltip on hover: *"System default dashboards are not editable. Create a duplicate in order to edit this dashboard."*
+- Disabled edit icon in dashboard selector dropdown shows tooltip: *"System default dashboards are uneditable."*
+- Disabled "Edit dashboard" removed from hub list kebab menu for prebuilt dashboards
+
+### Styling & Polish
+- Active tab underline color changed to PatternFly blue
+- Widget builder layout adapted for narrow side panel
+- Code editor given a fixed height (280px) so Markdown is visible
+- Browser tab title: **SJ's HCC Prototype**
+- Removed "Red Hat status page" link, search hint text, and widget count text from help panel
 
 ---
 
-## 🧱 Tech Stack
+## Tech Stack
 
-- **React 18**
-- **TypeScript**
+- **React 18** + **TypeScript**
 - **PatternFly 6**
 - **Webpack 5**
-- **GitHub Pages** (main prototype at `/prototype/`; PCM demo on `pcm-integration`)
 
 ---
 
-## 🚀 Deployment
-
-The **`main`** branch auto-deploys to **GitHub Pages** at **`/prototype/`** when you push to **`main`**.
-
-See **[`DEPLOYING.md`](./DEPLOYING.md)** for URLs, GitHub setup, and the PCM vs main split.
-
----
-
-## 🛠 Local Development
+## Local Development
 
 Install dependencies:
 
@@ -58,55 +53,25 @@ npm install
 Run development server:
 
 ```bash
-npm run start:dev
+npm start
 ```
 
-Build production bundle:
+The app will be available at **http://localhost:9000**.
+
+Build for production:
 
 ```bash
 npm run build
 ```
 
-Preview production build locally:
+---
 
-```bash
-npx sirv dist --single --cors --host --port 8080
-```
+## Original Project
+
+Based on [maryshak1996/hcc-nextgenui-widget-builder](https://github.com/maryshak1996/hcc-nextgenui-widget-builder).
 
 ---
 
-## 🧠 Architecture Notes
+## Maintained By
 
-- Uses content-hashed asset filenames to prevent stale caching.
-- **`main`** is published to GitHub Pages under **`/prototype/`** with **`PUBLIC_PATH`** + **`ROUTER_BASENAME`**.
-- **`pcm-integration`** continues to deploy the PCM demo at the repo root (separate workflow; unchanged).
-- Local dev defaults to **`http://localhost:9000/`** (no subpath).
-
----
-
-## 📁 Project Structure (Simplified)
-
-```
-src/
-  app/
-    AppLayout/
-    Homepage/
-    routes.tsx
-  index.tsx
-webpack.build-env.js
-webpack.common.js
-webpack.prod.js
-.github/workflows/deploy-main-github-pages.yml
-```
-
----
-
-## ⚠️ Disclaimer
-
-This repository is for internal UX exploration and demo purposes only.
-
----
-
-## ✨ Maintained By
-
-Mary Shakshober
+SJ Cox
